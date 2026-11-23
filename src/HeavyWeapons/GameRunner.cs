@@ -119,43 +119,6 @@ public class GameRunner
             _projectiles.Add(new Projectile(muzzleTip, angleDeg, 720f, isGhost));
             _particles.SpawnMuzzleFlash(muzzleTip, angleDeg, isCyan: false);
         };
-
-        // เชื่อม Action การปล่อยระเบิดนิวเคลียร์ (Special Weapon)
-        _player.OnNukeAction = (pivotPos, isGhost) => TriggerNukeBlast(pivotPos, isGhost: false);
-        _ghost.OnNukeAction = (pivotPos, isGhost) => TriggerNukeBlast(pivotPos, isGhost: false);
-    }
-
-    private void TriggerNukeBlast(Vector2 origin, bool isGhost)
-    {
-        _screenShakeTimer = 0.55f;
-        _particles.SpawnExplosion(new Vector2(ScreenWidth / 2f, 300f), count: 90, maxSpeed: 420f, isCyan: false);
-
-        // ทำลายล้างลูกระเบิดและกระสุนศัตรูทั้งหมดบนท้องฟ้า
-        foreach (var b in _bombs)
-        {
-            _particles.SpawnExplosion(b.Position, count: 12, maxSpeed: 160f);
-        }
-        _bombs.Clear();
-
-        // สร้างความเสียหายมหาศาลแก่เครื่องบินทุกลำบนจอ
-        for (int i = _enemies.Count - 1; i >= 0; i--)
-        {
-            var enemy = _enemies[i];
-            enemy.TakeDamage(350);
-            _particles.SpawnExplosion(enemy.Position, count: 40, maxSpeed: 280f, isCyan: false);
-
-            if (enemy.IsDestroyed)
-            {
-                if (!isGhost && _state != GameState.ReplayTheater)
-                {
-                    _score += enemy.ScoreValue;
-                }
-                _waveDirector.EnemiesKilled++;
-                _enemies.RemoveAt(i);
-            }
-        }
-
-        AddCommandLog(isGhost ? "Replay" : "Player", "★ ATOMIC SHOCKWAVE DETONATED! Airspace Cleared!");
     }
 
     private void StartNewSurvivalRun()
@@ -481,14 +444,6 @@ public class GameRunner
             AddCommandLog("Player", $"[{_survivalTime:00.00}s] {fireCmd}");
         }
 
-        ICommand? nukeCmd = _inputHandler.CheckNuke();
-        if (nukeCmd != null && _player.NukeCount > 0)
-        {
-            nukeCmd.Execute(_player);
-            _recorder.Record(_survivalTime, nukeCmd);
-            AddCommandLog("Player", $"[{_survivalTime:00.00}s] {nukeCmd}");
-        }
-
         // ฟิสิกส์การเคลื่อนที่ของรถถังผู้เล่นจริง
         _player.UpdatePhysics(dt, minX: 50f, maxX: ScreenWidth - 50f);
 
@@ -516,12 +471,12 @@ public class GameRunner
             }
         }
 
-        // สปอว์นกล่องเสบียงชูชีพ (+35 HP หรือ +1 Nuke)
+        // สปอว์นกล่องเสบียงชูชีพ (+35 HP)
         _supplyDropTimer -= dt;
         if (_supplyDropTimer <= 0f)
         {
             _supplyDropTimer = 14f;
-            SupplyType type = Random.Shared.Next(10) < 6 ? SupplyType.ArmorRepair : SupplyType.NuclearCharge;
+            SupplyType type = SupplyType.ArmorRepair;
             float dropX = 120f + (float)Random.Shared.NextDouble() * 1040f;
             _supplyDrops.Add(new SupplyDrop(new Vector2(dropX, 40f), type));
             AddCommandLog("HQ", "Allied Supply Crate airdropped!");
@@ -842,7 +797,7 @@ public class GameRunner
 
         // ส่วนที่ 3: เสบียงและ Replay
         Raylib.DrawText("3. SUPPLY CRATES & REPLAY THEATER", cardX + 35, cardY + 400, 18, Color.SkyBlue);
-        Raylib.DrawText("• Allied Parachutes: Grab Green crates (+35 HP) or Gold crates (+1 Nuke Warhead)", cardX + 50, cardY + 430, 15, Color.Lime);
+        Raylib.DrawText("• Allied Parachutes: Grab Green crates to restore +35 HP!", cardX + 50, cardY + 430, 15, Color.Lime);
         Raylib.DrawText("• Replay Theater: When destroyed, press [P] to watch spectator replay of your run!", cardX + 50, cardY + 455, 15, Color.Gold);
 
         // ปุ่มย้อนกลับ
@@ -992,7 +947,7 @@ public class GameRunner
         }
 
         // -------------------------------------------------------------
-        // แถบพลังชีวิตผู้เล่นและจำนวน Nuke ด้านล่างซ้าย
+        // แถบพลังชีวิตผู้เล่นด้านล่างซ้าย
         // -------------------------------------------------------------
         Raylib.DrawRectangle(16, ScreenHeight - 56, 420, 42, new Color(15, 22, 36, 220));
         Raylib.DrawRectangleLines(16, ScreenHeight - 56, 420, 42, new Color(70, 90, 120, 255));
@@ -1004,14 +959,10 @@ public class GameRunner
         Raylib.DrawRectangle(80, ScreenHeight - 48, (int)(180 * hpRatio), 18, barColor);
         Raylib.DrawText($"{_player.Health} / {_player.MaxHealth}", 140, ScreenHeight - 46, 12, Color.Black);
 
-        Color nukeColor = _player.NukeCount > 0 ? Color.Gold : Color.DarkGray;
-        string nukeStatus = _player.NukeCount > 0 ? $"NUKE: READY x{_player.NukeCount} [R-Click/B]" : "NUKE: DEPLETED";
-        Raylib.DrawText(nukeStatus, 275, ScreenHeight - 45, 12, nukeColor);
-
         // -------------------------------------------------------------
         // คู่มือปุ่มควบคุมด้านล่างขวา
         // -------------------------------------------------------------
-        Raylib.DrawText("[A/D] Move | [Mouse] Aim | [Space/L-Click] Fire | [R-Click/B] Nuke | [ESC] Menu", ScreenWidth - 610, ScreenHeight - 34, 13, Color.RayWhite);
+        Raylib.DrawText("[A/D] Move | [Mouse] Aim | [Space/L-Click] Fire | [ESC] Menu", ScreenWidth - 520, ScreenHeight - 34, 13, Color.RayWhite);
 
         // -------------------------------------------------------------
         // ป้ายแสดงสถานะ Game Over

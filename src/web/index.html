@@ -120,22 +120,6 @@ class SoundSystem {
     osc.start(t);
     osc.stop(t + 0.32);
   }
-  playNuke() {
-    if (!this.ctx) return;
-    const t = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(70, t);
-    osc.frequency.linearRampToValueAtTime(320, t + 0.5);
-    osc.frequency.exponentialRampToValueAtTime(20, t + 1.3);
-    gain.gain.setValueAtTime(0.65, t);
-    gain.gain.exponentialRampToValueAtTime(0.01, t + 1.3);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start(t);
-    osc.stop(t + 1.3);
-  }
   playSupply() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
@@ -211,15 +195,6 @@ class FireCannonCommand extends ICommand {
   }
 }
 
-class DeployNukeCommand extends ICommand {
-  constructor() {
-    super("DeployNukeCommand");
-  }
-  execute(target) {
-    target.deployNuke();
-  }
-}
-
 // ----------------------------------------------------------------------------
 // RECEIVER HIERARCHY (ITankReceiver, TankBase, PlayerTank, GhostTank)
 // ----------------------------------------------------------------------------
@@ -227,7 +202,6 @@ class ITankReceiver {
   move(dirX) {}
   aimTurret(angleDeg) {}
   fire() {}
-  deployNuke() {}
   takeDamage(amt) {}
   reset(pos) {}
 }
@@ -241,7 +215,6 @@ class TankBase extends ITankReceiver {
     this.turretAngleDeg = -90;
     this.health = 100;
     this.maxHealth = 100;
-    this.nukeCount = 1;
 
     this.moveSpeed = 280;
     this.chassisWidth = 68;
@@ -249,7 +222,6 @@ class TankBase extends ITankReceiver {
     this.barrelLength = 34;
 
     this.onFireAction = null;
-    this.onNukeAction = null;
   }
 
   get isAlive() {
@@ -294,15 +266,6 @@ class TankBase extends ITankReceiver {
     }
   }
 
-  deployNuke() {
-    if (!this.isAlive || this.nukeCount <= 0) return;
-    this.nukeCount--;
-    const isGhost = this instanceof GhostTank;
-    if (this.onNukeAction) {
-      this.onNukeAction(this.turretPivot, isGhost);
-    }
-  }
-
   takeDamage(damage) {
     this.health = Math.max(0, this.health - damage);
     sfx.playHit();
@@ -318,7 +281,6 @@ class TankBase extends ITankReceiver {
     this.velocity.x = 0;
     this.turretAngleDeg = -90;
     this.health = this.maxHealth;
-    this.nukeCount = 1;
   }
 
   updatePhysics(dt, minX, maxX) {
@@ -570,7 +532,7 @@ class Bomb {
 class SupplyDrop {
   constructor(startPos, type) {
     this.position = { x: startPos.x, y: startPos.y };
-    this.type = type; // "ArmorRepair" (+35 HP) or "NuclearCharge" (+1 Nuke)
+    this.type = type; // "ArmorRepair" (+35 HP)
     this.isActive = true;
     this.velocity = { x: 0, y: 70 };
   }
@@ -1098,34 +1060,6 @@ class GameRunner {
       this.projectiles.push(new Projectile(muzzleTip, angleDeg, 720, isGhost));
       this.particles.spawnMuzzleFlash(muzzleTip, angleDeg, true);
     };
-
-    this.player.onNukeAction = (pivotPos, isGhost) => this.triggerNukeBlast(pivotPos, false);
-    this.ghost.onNukeAction = (pivotPos, isGhost) => this.triggerNukeBlast(pivotPos, true);
-  }
-
-  triggerNukeBlast(origin, isGhost) {
-    sfx.playNuke();
-    this.screenShakeTimer = 0.55;
-    this.particles.spawnExplosion({ x: ScreenWidth / 2, y: 300 }, 90, 420, isGhost);
-
-    for (const b of this.bombs) {
-      this.particles.spawnExplosion(b.position, 12, 160);
-    }
-    this.bombs = [];
-
-    for (let i = this.enemies.length - 1; i >= 0; i--) {
-      const e = this.enemies[i];
-      e.takeDamage(350);
-      this.particles.spawnExplosion(e.position, 40, 280, isGhost);
-      if (e.isDestroyed) {
-        if (!isGhost && this.state !== GameState.ReplayTheater) {
-          this.score += e.scoreValue;
-        }
-        this.enemiesKilled++;
-        this.enemies.splice(i, 1);
-      }
-    }
-    this.addCommandLog(isGhost ? "Replay" : "Player", "★ ATOMIC SHOCKWAVE DETONATED! Airspace Cleared!");
   }
 
   addCommandLog(source, msg) {
@@ -1155,12 +1089,6 @@ class GameRunner {
         if (e.code === "Escape" || e.code === "KeyM" || e.code === "Space") this.state = GameState.MainMenu;
       } else if (this.state === GameState.Playing) {
         if (e.code === "Escape" || e.code === "KeyM") this.state = GameState.MainMenu;
-        if (e.code === "KeyB" || e.code === "KeyF") {
-          const cmd = new DeployNukeCommand();
-          cmd.execute(this.player);
-          this.recorder.record(cmd, this.survivalTime);
-          this.addCommandLog("Player", "DeployNukeCommand");
-        }
       } else if (this.state === GameState.GameOver) {
         if (e.code === "KeyP") this.startReplayTheater();
         if (e.code === "Space" || e.code === "Enter") this.startNewSurvivalRun();
@@ -1189,12 +1117,6 @@ class GameRunner {
       if (e.button === 2) {
         e.preventDefault();
         this.mouse.rightDown = true;
-        if (this.state === GameState.Playing) {
-          const cmd = new DeployNukeCommand();
-          cmd.execute(this.player);
-          this.recorder.record(cmd, this.survivalTime);
-          this.addCommandLog("Player", "DeployNukeCommand");
-        }
       }
     });
 
@@ -1484,9 +1406,6 @@ class GameRunner {
           if (s.type === "ArmorRepair") {
             this.player.health = Math.min(this.player.maxHealth, this.player.health + 35);
             this.addCommandLog("HQ", "Armor Repaired +35 HP!");
-          } else {
-            this.player.nukeCount++;
-            this.addCommandLog("HQ", "Atomic Warhead Loaded +1!");
           }
           sfx.playSupply();
           this.particles.spawnExplosion(s.position, 16, 120, false);
@@ -1871,7 +1790,7 @@ class GameRunner {
 
     ctx.fillStyle = "rgb(0, 230, 100)";
     ctx.font = "15px 'Segoe UI', Arial";
-    ctx.fillText("• Allied Parachutes: Grab Green crates (+35 HP) or Gold crates (+1 Nuke Warhead)", cardX + 50, cardY + 444);
+    ctx.fillText("• Allied Parachutes: Grab Green crates to restore +35 HP!", cardX + 50, cardY + 444);
     ctx.fillStyle = "rgb(255, 215, 0)";
     ctx.fillText("• Replay Theater: When destroyed, press [P] to watch spectator replay of your run!", cardX + 50, cardY + 468);
 
@@ -2014,7 +1933,7 @@ class GameRunner {
       logY += 15;
     }
 
-    // Bottom-Left Health & Nuke Bar
+    // Bottom-Left Health Bar
     ctx.fillStyle = "rgba(15, 22, 36, 0.88)";
     ctx.fillRect(16, ScreenHeight - 56, 420, 42);
     ctx.strokeStyle = "rgb(70, 90, 120)";
@@ -2035,16 +1954,12 @@ class GameRunner {
     ctx.font = "bold 12px 'Segoe UI', Arial";
     ctx.fillText(`${Math.round(this.player.health)} / ${this.player.maxHealth}`, 140, ScreenHeight - 34);
 
-    const nukeColor = this.player.nukeCount > 0 ? "rgb(255, 215, 0)" : "rgb(120, 120, 120)";
-    const nukeStatus = this.player.nukeCount > 0 ? `NUKE: READY x${this.player.nukeCount} [R-Click/B]` : "NUKE: DEPLETED";
-    ctx.fillStyle = nukeColor;
-    ctx.fillText(nukeStatus, 275, ScreenHeight - 32);
 
     // Bottom-Right Controls Hint
     ctx.fillStyle = "rgb(240, 240, 240)";
     ctx.font = "13px 'Segoe UI', Arial";
     ctx.textAlign = "right";
-    ctx.fillText("[A/D] Move | [Mouse] Aim | [Space/L-Click] Fire | [R-Click/B] Nuke | [ESC] Menu", ScreenWidth - 24, ScreenHeight - 30);
+    ctx.fillText("[A/D] Move | [Mouse] Aim | [Space/L-Click] Fire | [ESC] Menu", ScreenWidth - 24, ScreenHeight - 30);
 
     // Game Over Overlay
     if (this.state === GameState.GameOver) {

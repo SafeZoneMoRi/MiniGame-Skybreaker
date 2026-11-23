@@ -5,13 +5,12 @@ namespace HeavyWeapons.Core.Entities;
 
 public enum SupplyType
 {
-    ArmorRepair,   // กล่องซ่อมแซมเกราะ (+35 HP)
-    NuclearCharge  // ลูกกระสุนนิวเคลียร์ (+1 Nuke)
+    ArmorRepair   // กล่องซ่อมแซมเกราะ (+35 HP)
 }
 
 /// <summary>
 /// กล่องเสบียงทิ้งร่มชูชีพ (Parachuting Supply Drop)
-/// ลอยช้าๆ ลงมาจากฟากฟ้า ให้ผู้เล่นบังคับรถถังไปเก็บเพื่อฟื้นฟูพลังชีวิตหรือเติมระเบิดนิวเคลียร์
+/// ลอยช้าๆ ลงมาจากฟากฟ้า ให้ผู้เล่นบังคับรถถังไปเก็บเพื่อฟื้นฟูพลังชีวิต
 /// </summary>
 public class SupplyDrop
 {
@@ -24,7 +23,7 @@ public class SupplyDrop
     private float _swayTimer = 0f;
     private readonly float _initialX;
 
-    public SupplyDrop(Vector2 startPos, SupplyType type)
+    public SupplyDrop(Vector2 startPos, SupplyType type = SupplyType.ArmorRepair)
     {
         Position = startPos;
         _initialX = startPos.X;
@@ -54,7 +53,7 @@ public class SupplyDrop
 
         // 1. วาดร่มชูชีพ (Parachute Dome)
         Vector2 chuteCenter = new(Position.X, Position.Y - 22f);
-        Color chuteColor = Type == SupplyType.ArmorRepair ? Color.Green : Color.Gold;
+        Color chuteColor = Color.Green;
         Raylib.DrawCircleSector(chuteCenter, 18f, 180f, 360f, 16, chuteColor);
         Raylib.DrawCircleSectorLines(chuteCenter, 18f, 180f, 360f, 16, Color.White);
 
@@ -67,19 +66,9 @@ public class SupplyDrop
         Raylib.DrawRectangleRounded(crateRect, 0.2f, 4, new Color(70, 50, 30, 255));
         Raylib.DrawRectangleRoundedLines(crateRect, 0.2f, 4, Color.Gold);
 
-        // 3. สัญลักษณ์บนกล่อง
-        if (Type == SupplyType.ArmorRepair)
-        {
-            // กากบาทพยาบาลสีเขียว (+)
-            Raylib.DrawRectangle((int)Position.X - 2, (int)Position.Y - 7, 4, 14, Color.Lime);
-            Raylib.DrawRectangle((int)Position.X - 7, (int)Position.Y - 2, 14, 4, Color.Lime);
-        }
-        else
-        {
-            // สัญลักษณ์กัมมันตรังสี / Nuke (★)
-            Raylib.DrawCircleV(Position, 4f, Color.Yellow);
-            Raylib.DrawCircleLines((int)Position.X, (int)Position.Y, 7f, Color.Gold);
-        }
+        // 3. สัญลักษณ์บนกล่อง (กากบาทพยาบาลสีเขียว +)
+        Raylib.DrawRectangle((int)Position.X - 2, (int)Position.Y - 7, 4, 14, Color.Lime);
+        Raylib.DrawRectangle((int)Position.X - 7, (int)Position.Y - 2, 14, 4, Color.Lime);
     }
 }
 

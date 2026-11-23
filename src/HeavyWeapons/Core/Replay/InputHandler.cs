@@ -89,23 +89,6 @@ public class InputHandler
         return null;
     }
 
-    /// <summary>
-    /// ตรวจจับการกดปล่อยระเบิดนิวเคลียร์ (คลิกขวา หรือ ปุ่ม B / F)
-    /// </summary>
-    public ICommand? CheckNuke()
-    {
-        bool isNukePressed = Raylib.IsMouseButtonPressed(MouseButton.Right) ||
-                             Raylib.IsKeyPressed(KeyboardKey.B) ||
-                             Raylib.IsKeyPressed(KeyboardKey.F);
-
-        if (isNukePressed)
-        {
-            return new DeployNukeCommand();
-        }
-
-        return null;
-    }
-
     public void Reset()
     {
         _lastDirectionX = 0f;

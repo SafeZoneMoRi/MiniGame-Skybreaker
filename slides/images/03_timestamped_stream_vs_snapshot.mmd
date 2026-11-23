@@ -1,0 +1,32 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 
+    'darkMode': true, 
+    'background': '#1e1e2e', 
+    'primaryColor': '#a6e3a1', 
+    'primaryTextColor': '#cdd6f4', 
+    'primaryBorderColor': '#94e2d5', 
+    'lineColor': '#a6e3a1', 
+    'secondaryColor': '#313244', 
+    'tertiaryColor': '#181825', 
+    'fontFamily': 'Segoe UI, Sarabun, sans-serif' 
+}}}%%
+flowchart LR
+    subgraph Snapshots["🔴 Approach A: Full Frame Snapshots (Naive)"]
+        direction TB
+        F1["Frame 1 (0.016s)<br/>Pos(80, 440), Vel(0,0), Anim(0)"]
+        F2["Frame 2 (0.033s)<br/>Pos(80, 440), Vel(0,0), Anim(0)"]
+        F3["Frame 3 (0.050s)<br/>Pos(80, 440), Vel(0,0), Anim(0)"]
+        Fdots["... 60 Frames Every Second ..."]
+        Fsize["⚠️ Size: ~10-50 MB / min<br/>High I/O Overhead & Memory Bloat"]
+        F1 --> F2 --> F3 --> Fdots --> Fsize
+    end
+
+    subgraph CommandStream["🟢 Approach B: Timestamped Command Stream (Event-Driven)"]
+        direction TB
+        C1["⏱️ 0.00s: MoveCommand(1.0)"]
+        C2["⏱️ 1.25s: JumpCommand()"]
+        C3["⏱️ 1.85s: JumpCommand()"]
+        C4["⏱️ 3.10s: MoveCommand(0.0)"]
+        Csize["⚡ Size: ~2-5 KB / min (99.9% Smaller!)<br/>Deterministic Re-simulation via Engine"]
+        C1 --> C2 --> C3 --> C4 --> Csize
+    end
+

@@ -15,7 +15,6 @@ public abstract class TankBase : ITankReceiver
     public float TurretAngleDeg { get; set; } = -90f; // เล็งตรงขึ้นฟ้าเป็นค่าเริ่มต้น
     public int Health { get; set; } = 100;
     public int MaxHealth { get; protected set; } = 100;
-    public int NukeCount { get; set; } = 1;
     public bool IsAlive => Health > 0;
 
     public const float MoveSpeed = 280f;
@@ -24,7 +23,6 @@ public abstract class TankBase : ITankReceiver
     public const float BarrelLength = 34f;
 
     public Action<Vector2, float, bool>? OnFireAction;
-    public Action<Vector2, bool>? OnNukeAction;
 
     public Rectangle Bounds => new(
         Position.X - ChassisWidth / 2f,
@@ -67,14 +65,6 @@ public abstract class TankBase : ITankReceiver
         OnFireAction?.Invoke(MuzzleTip, TurretAngleDeg, isGhost);
     }
 
-    public virtual void DeployNuke()
-    {
-        if (!IsAlive || NukeCount <= 0) return;
-        NukeCount--;
-        bool isGhost = this is GhostTank;
-        OnNukeAction?.Invoke(TurretPivot, isGhost);
-    }
-
     public virtual void TakeDamage(int damage)
     {
         Health = Math.Max(0, Health - damage);
@@ -91,7 +81,6 @@ public abstract class TankBase : ITankReceiver
         Velocity = Vector2.Zero;
         TurretAngleDeg = -90f;
         Health = MaxHealth;
-        NukeCount = 1;
     }
 
     public virtual void UpdatePhysics(float dt, float minX, float maxX)

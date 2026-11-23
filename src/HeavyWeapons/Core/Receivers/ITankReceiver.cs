@@ -15,14 +15,12 @@ public interface ITankReceiver
     float TurretAngleDeg { get; set; }
     int Health { get; set; }
     int MaxHealth { get; }
-    int NukeCount { get; set; }
     bool IsAlive { get; }
     Rectangle Bounds { get; }
 
     void Move(float directionX);
     void AimTurret(float angleDeg);
     void Fire();
-    void DeployNuke();
     void TakeDamage(int damage);
     void Stop();
     void Reset(Vector2 startPos);

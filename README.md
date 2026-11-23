@@ -28,14 +28,10 @@ classDiagram
     class FireCannonCommand {
         +Execute(target: ITankReceiver) void
     }
-    class DeployNukeCommand {
-        +Execute(target: ITankReceiver) void
-    }
 
     ICommand <|.. MoveTankCommand
     ICommand <|.. AimTurretCommand
     ICommand <|.. FireCannonCommand
-    ICommand <|.. DeployNukeCommand
 
     %% Receiver Hierarchy
     class ITankReceiver {
@@ -45,13 +41,11 @@ classDiagram
         +TurretAngleDeg: float
         +Health: int
         +MaxHealth: int
-        +NukeCount: int
         +IsAlive: bool
         +Bounds: Rectangle
         +Move(directionX: float) void
         +AimTurret(angleDeg: float) void
         +Fire() void
-        +DeployNuke() void
         +TakeDamage(damage: int) void
         +Reset(startPos: Vector2) void
     }
@@ -62,7 +56,6 @@ classDiagram
         +Position: Vector2
         +TurretAngleDeg: float
         +Health: int
-        +NukeCount: int
         +UpdatePhysics(dt: float, minX: float, maxX: float) void
         +Draw(bodyColor: Color, accentColor: Color, barrelColor: Color) void
     }
@@ -86,7 +79,6 @@ classDiagram
         +CheckHorizontalMovement() ICommand
         +CheckTurretAim(tankPivot: Vector2) ICommand
         +CheckFire() ICommand
-        +CheckNuke() ICommand
     }
 
     class TimedCommand {
@@ -247,7 +239,6 @@ classDiagram
 | **`[A]` / `[D]`** หรือ **`[←]` / `[→]`** | เคลื่อนที่รถถังซ้าย-ขวา | สร้าง `MoveTankCommand` ส่งเข้า Receiver |
 | **`[Mouse Movement]`** | เล็งองศาป้อมปืนตามเคอร์เซอร์ | สร้าง `AimTurretCommand` คำนวณมุม Radian/Degree |
 | **`[Spacebar]`** หรือ **`[คลิกซ้าย]`** | ยิงกระสุนปืนใหญ่หลัก | สร้าง `FireCannonCommand` สร้างอนุภาคกระสุน |
-| **`[คลิกขวา]`** หรือ **`[B]` / `[F]`** | ปล่อยระเบิดนิวเคลียร์ล้างจอ | สร้าง `DeployNukeCommand` เคลียร์ยูนิตศัตรูทั้งหมด |
 | **`[P]`** (หน้า Game Over) | รับชม Replay Theater | สลับเข้าสู่ Replay Mode พร้อมโหลดคิวคำสั่งย้อนหลัง |
 | **`[M]` / `[ESC]`** | เมนูหลัก / ยกเลิก | กลับสู่หน้า Main Menu (ไม่ปิดเกมกะทันหัน) |
 
@@ -256,7 +247,7 @@ classDiagram
 ## 🔬 คำอธิบายเชิงเทคนิค (Technical Description)
 
 ### 1. สถาปัตยกรรม GoF Command Pattern & Replay System
-* **Decoupling of Invoker & Receiver:** แยกส่วนการตรวจจับอินพุต (`InputHandler`) ออกจากการกระทำของรถถัง (`ITankReceiver`) โดยอินพุตจะสร้าง **Command Objects** (`MoveTankCommand`, `AimTurretCommand`, `FireCannonCommand`, `DeployNukeCommand`) 
+* **Decoupling of Invoker & Receiver:** แยกส่วนการตรวจจับอินพุต (`InputHandler`) ออกจากการกระทำของรถถัง (`ITankReceiver`) โดยอินพุตจะสร้าง **Command Objects** (`MoveTankCommand`, `AimTurretCommand`, `FireCannonCommand`) 
 * **Dual Execution & Stream Recording:** ในขณะที่ผู้เล่นควบคุมเกม Command จะถูกเรียก `.Execute(playerTank)` และส่งต่อไปยัง `CommandRecorder` เพื่อประทับเวลา (`Timestamp`) เก็บเป็นรายการ `TimedCommand` ต่อเนื่อง
 * **Deterministic Replay Theater:** เมื่อเข้าสู่โหมดรีเพลย์ ระบบจะนำประวัติคำสั่งทั้งหมดส่งเข้า `GhostPlaybackEngine` และแปลงเป็น **FIFO Queue (`Queue<TimedCommand>`)** เพื่อทยอยปลดปล่อยและ Execute ให้กับ `GhostTank` ตามไทม์สแตมป์จริง ช่วยให้ได้การเล่นซ้ำที่แม่นยำ 100% โดยบันทึกขนาดไฟล์เพียงระดับ Kilobytes (ไม่จำเป็นต้องบันทึกวิดีโอไฟล์ใหญ่)
 
@@ -275,3 +266,4 @@ classDiagram
 * **`List<T>` (Dynamic Collection):** จัดการกลุ่มของ Entities ในฉาก เช่น กระสุน (`List<Projectile>`), ลูกระเบิด (`List<Bomb>`), ละอองสะเก็ดไฟอนุภาค (`List<Particle>`), และกล่องเสบียง (`List<SupplyDrop>`) เพื่อความยืดหยุ่นในการเพิ่ม/ลบแบบ Dynamic
 * **`Queue<TimedCommand>` (FIFO Data Structure):** ใช้ใน `GhostPlaybackEngine` เพื่อเรียงลำดับคำสั่งรีเพลย์ตามช่วงเวลาจากอดีตไปสู่อนาคต คำสั่งที่ถูก Execute แล้วจะถูก Dequeue ออกทันทีอย่างมีประสิทธิภาพสูง
 * **`Fixed-size Circular Buffer / Queue`:** นำมาใช้แสดงผล Log รายการ Command ที่กำลังถูกประมวลผลบนหน้าจอ HUD ด้านขวาบนแบบ Real-time
+

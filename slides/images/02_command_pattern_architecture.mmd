@@ -1,0 +1,72 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 
+    'darkMode': true, 
+    'background': '#1e1e2e', 
+    'primaryColor': '#89b4fa', 
+    'primaryTextColor': '#cdd6f4', 
+    'primaryBorderColor': '#b4befe', 
+    'lineColor': '#89b4fa', 
+    'secondaryColor': '#313244', 
+    'tertiaryColor': '#181825', 
+    'fontFamily': 'Segoe UI, Sarabun, sans-serif' 
+}}}%%
+classDiagram
+    class ICommand {
+        <<interface>>
+        +Execute(IPlatformerCharacter target) void
+    }
+
+    class MoveCommand {
+        +float DirectionX
+        +string Name
+        +MoveCommand(float directionX)
+        +Execute(IPlatformerCharacter target) void
+    }
+
+    class JumpCommand {
+        +string Name
+        +Execute(IPlatformerCharacter target) void
+    }
+
+    class IPlatformerCharacter {
+        <<interface>>
+        +Vector2 Position
+        +Vector2 Velocity
+        +bool IsGrounded
+        +Move(float directionX) void
+        +Jump() void
+        +Stop() void
+        +Reset(Vector2 startPos) void
+    }
+
+    class MarioPlayer {
+        +UpdatePhysics(float dt, blocks) void
+        +Draw(Texture2D texture) void
+    }
+
+    class GhostRunner {
+        +bool IsActive
+        +UpdatePhysics(float dt, blocks) void
+        +Draw(Texture2D texture) void
+    }
+
+    class InputHandler {
+        -float _lastDirectionX
+        +CheckHorizontalMovement() ICommand
+        +CheckJump() ICommand
+    }
+
+    class GhostPlaybackEngine {
+        -List~TimedCommand~ _ghostTape
+        -int _playbackIndex
+        +Update(float time, GhostRunner ghost) void
+    }
+
+    ICommand <|.. MoveCommand : implements
+    ICommand <|.. JumpCommand : implements
+    IPlatformerCharacter <|.. MarioPlayer : implements
+    IPlatformerCharacter <|.. GhostRunner : implements
+
+    InputHandler ..> ICommand : produces
+    GhostPlaybackEngine ..> ICommand : consumes & executes
+    ICommand ..> IPlatformerCharacter : acts upon (Polymorphic)
+

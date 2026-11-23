@@ -1,0 +1,44 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 
+    'darkMode': true, 
+    'background': '#1e1e2e', 
+    'primaryColor': '#cba6f7', 
+    'primaryTextColor': '#cdd6f4', 
+    'primaryBorderColor': '#b4befe', 
+    'lineColor': '#cba6f7', 
+    'secondaryColor': '#313244', 
+    'tertiaryColor': '#181825', 
+    'fontFamily': 'Segoe UI, Sarabun, sans-serif' 
+}}}%%
+flowchart TD
+    subgraph RunPhase["🏎️ Phase 1: Live Run & Recording"]
+        Hardware["⌨️ Hardware Input<br/>(Keyboard / Gamepad)"]
+        Handler["⚙️ InputHandler<br/>(Detects State Change)"]
+        LivePlayer["🏃 Live Player (MarioPlayer)<br/>Executes & Runs in Real-Time"]
+        Recorder["📼 CommandRecorder<br/>Appends (timestamp, command)"]
+    end
+
+    subgraph PBPhase["🏆 Phase 2: Personal Best Check"]
+        Finish["🏁 Finish Portal Reached!"]
+        CheckPB{"Timer < BestTime ?"}
+        SaveTape["💾 Save Tape to Ghost Tape Buffer<br/>LoadNewPersonalBest()"]
+        Discard["❌ Slower Time -> Discard Tape"]
+    end
+
+    subgraph ReplayPhase["👻 Phase 3: Ghost Playback on Next Run"]
+        Timer["⏱️ Level Timer (Ticks every frame)"]
+        Engine["🎬 GhostPlaybackEngine<br/>Reads tape where timestamp <= current"]
+        Ghost["👻 GhostRunner<br/>Executes command on exact same physics!"]
+    end
+
+    Hardware --> Handler
+    Handler -->|Execute| LivePlayer
+    Handler -->|Record| Recorder
+    LivePlayer --> Finish
+    Finish --> CheckPB
+    CheckPB -->|Yes| SaveTape
+    CheckPB -->|No| Discard
+
+    SaveTape -.->|Feeds Tape| Engine
+    Timer --> Engine
+    Engine -->|Execute| Ghost
+

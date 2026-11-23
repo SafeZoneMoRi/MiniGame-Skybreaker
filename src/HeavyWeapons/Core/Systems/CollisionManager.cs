@@ -109,18 +109,9 @@ public class CollisionManager
             if (Raylib.CheckCollisionRecs(crate.Bounds, player.Bounds))
             {
                 crate.IsActive = false;
-                if (crate.Type == SupplyType.ArmorRepair)
-                {
-                    player.Health = Math.Min(player.MaxHealth, player.Health + 35);
-                    particles.SpawnExplosion(crate.Position, count: 25, maxSpeed: 150f, isCyan: true);
-                    logCallback("Supply", $"Repairs Secured! +35 Armor (HP: {player.Health}/{player.MaxHealth})");
-                }
-                else
-                {
-                    player.NukeCount++;
-                    particles.SpawnExplosion(crate.Position, count: 30, maxSpeed: 180f, isCyan: false);
-                    logCallback("Supply", $"Nuclear Payload Loaded! (+1 Nuke, Total: {player.NukeCount})");
-                }
+                player.Health = Math.Min(player.MaxHealth, player.Health + 35);
+                particles.SpawnExplosion(crate.Position, count: 25, maxSpeed: 150f, isCyan: true);
+                logCallback("Supply", $"Repairs Secured! +35 Armor (HP: {player.Health}/{player.MaxHealth})");
             }
         }
     }
