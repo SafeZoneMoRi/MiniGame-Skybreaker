@@ -63,8 +63,8 @@ public class SupplyDrop
 
         // 2. กล่องสัมภาระ (Supply Crate)
         Rectangle crateRect = new(Position.X - 12f, Position.Y - 12f, 24f, 24f);
-        Raylib.DrawRectangleRounded(crateRect, 0.2f, 4, new Color(70, 50, 30, 255));
-        Raylib.DrawRectangleRoundedLines(crateRect, 0.2f, 4, Color.Gold);
+        Raylib.DrawRectangleRounded(crateRect, 0.2f, 4, new Color(35, 65, 40, 255));
+        Raylib.DrawRectangleRoundedLines(crateRect, 0.2f, 4, Color.Lime);
 
         // 3. สัญลักษณ์บนกล่อง (กากบาทพยาบาลสีเขียว +)
         Raylib.DrawRectangle((int)Position.X - 2, (int)Position.Y - 7, 4, 14, Color.Lime);

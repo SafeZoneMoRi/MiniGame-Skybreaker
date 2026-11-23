@@ -162,7 +162,7 @@ classDiagram
     class SupplyDrop {
         +Position: Vector2
         +Type: SupplyType
-        +IsCollected: bool
+        +IsActive: bool
     }
     class ParticleSystem {
         +EmitExplosion(pos: Vector2, count: int) void

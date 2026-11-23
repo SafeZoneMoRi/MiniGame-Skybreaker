@@ -479,7 +479,7 @@ public class GameRunner
             SupplyType type = SupplyType.ArmorRepair;
             float dropX = 120f + (float)Random.Shared.NextDouble() * 1040f;
             _supplyDrops.Add(new SupplyDrop(new Vector2(dropX, 40f), type));
-            AddCommandLog("HQ", "Allied Supply Crate airdropped!");
+            AddCommandLog("HQ", "Allied Repair Crate airdropped!");
         }
 
         for (int i = _supplyDrops.Count - 1; i >= 0; i--)
