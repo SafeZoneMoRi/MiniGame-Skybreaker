@@ -54,6 +54,26 @@
  * ============================================================================
  */
 
+// Canvas roundRect Polyfill for universal browser compatibility
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'undefined') r = 5;
+    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
+    this.beginPath();
+    this.moveTo(x + (r.tl || 0), y);
+    this.lineTo(x + w - (r.tr || 0), y);
+    this.quadraticCurveTo(x + w, y, x + w, y + (r.tr || 0));
+    this.lineTo(x + w, y + h - (r.br || 0));
+    this.quadraticCurveTo(x + w, y + h, x + w - (r.br || 0), y + h);
+    this.lineTo(x + (r.bl || 0), y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - (r.bl || 0));
+    this.lineTo(x, y + (r.tl || 0));
+    this.quadraticCurveTo(x, y, x + (r.tl || 0), y);
+    this.closePath();
+    return this;
+  };
+}
+
 // ----------------------------------------------------------------------------
 // SOUND SYNTHESIZER (Web Audio API)
 // ----------------------------------------------------------------------------
@@ -1070,13 +1090,13 @@ class GameRunner {
     this.player.onFireAction = (muzzleTip, angleDeg, isGhost) => {
       sfx.playCannon();
       this.projectiles.push(new Projectile(muzzleTip, angleDeg, 720, isGhost));
-      this.particles.spawnMuzzleFlash(muzzleTip, angleDeg, isCyan: false);
+      this.particles.spawnMuzzleFlash(muzzleTip, angleDeg, false);
     };
 
     this.ghost.onFireAction = (muzzleTip, angleDeg, isGhost) => {
       sfx.playCannon();
       this.projectiles.push(new Projectile(muzzleTip, angleDeg, 720, isGhost));
-      this.particles.spawnMuzzleFlash(muzzleTip, angleDeg, isCyan: true);
+      this.particles.spawnMuzzleFlash(muzzleTip, angleDeg, true);
     };
 
     this.player.onNukeAction = (pivotPos, isGhost) => this.triggerNukeBlast(pivotPos, false);
